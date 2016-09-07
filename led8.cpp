@@ -1,50 +1,64 @@
 #include "led8.h"
 
-#if ARDUINO >= 100 // Arduino 1.0 and 0023 compatible!
 #include "Arduino.h"
-#else
-#include "WProgram.h"
-#endif
 
-void Led8::moveRight()
+String Led8::padLeftAndTrim(String value, int length)
 {
-  if (_cursor < 7)
-    _cursor++;
+  int stringLength = value.length();
+  if (stringLength == length) return value;
+  if (stringLength > length) return value.substring(0, length-1);
+  for (int i=0;i<length-stringLength;i++)
+    value = " "+value;
+  return value;
+}
+
+void Led8::moveRight(int steps)
+{
+  _cursor += steps;
+  if (_cursor >= DISPLAY_LENGTH)
+    _cursor = DISPLAY_LENGTH-1;
 }
 
 void Led8::update()
 {
-  outputSymbol(0, _buf[0]);
-  outputSymbol(1, _buf[1]);
-  outputSymbol(2, _buf[2]);
-  outputSymbol(3, _buf[3]);
-  outputSymbol(4, _buf[4]);
-  outputSymbol(5, _buf[5]);
-  outputSymbol(6, _buf[6]);
-  outputSymbol(7, _buf[7]);
+  outputBinary(0, _buf[0]);
+  outputBinary(1, _buf[1]);
+  outputBinary(2, _buf[2]);
+  outputBinary(3, _buf[3]);
+  outputBinary(4, _buf[4]);
+  outputBinary(5, _buf[5]);
+  outputBinary(6, _buf[6]);
+  outputBinary(7, _buf[7]);
 }
 
-void Led8::outputSymbol(int pos, int symbol)
+void Led8::outputBinary(int pos, int binary)
 {
   digitalWrite(_latch, LOW);
   shiftOut(_data, _clock, MSBFIRST, 1 << pos);
-  shiftOut(_data, _clock, MSBFIRST, symbol);
+  shiftOut(_data, _clock, MSBFIRST, binary);
   digitalWrite(_latch, HIGH);
 }
 
-void Led8::setSymbol(int pos, int symbol)
+char Led8::getBinaryCode(char symbol)
 {
-  _buf[pos] = symbol;
+  for (int i=0;i<SYMBOLS_COUNT;i++)
+    if (_symbols[i].Symbol == symbol) return _symbols[i].Code;
+  return _space;
 }
 
-void Led8::andSymbol(int pos, int symbol)
+void Led8::setBinary(int pos, int binary)
 {
-  setSymbol(pos, symbol & _buf[pos]);
+  _buf[pos] = binary;
 }
 
-void Led8::orSymbol(int pos, int symbol)
+void Led8::andBinary(int pos, int binary)
 {
-  setSymbol(pos, symbol | _buf[pos]);
+  setBinary(pos, binary & _buf[pos]);
+}
+
+void Led8::orBinary(int pos, int binary)
+{
+  setBinary(pos, binary | _buf[pos]);
 }
 
 void Led8::init(int dataPin, int clockPin, int latchPin)
@@ -60,52 +74,79 @@ void Led8::init(int dataPin, int clockPin, int latchPin)
 
 void Led8::clear()
 {
-  setSymbol(0, _space);
-  setSymbol(1, _space);
-  setSymbol(2, _space);
-  setSymbol(3, _space);
-  setSymbol(4, _space);
-  setSymbol(5, _space);
-  setSymbol(6, _space);
-  setSymbol(7, _space);
+  setBinary(0, _space);
+  setBinary(1, _space);
+  setBinary(2, _space);
+  setBinary(3, _space);
+  setBinary(4, _space);
+  setBinary(5, _space);
+  setBinary(6, _space);
+  setBinary(7, _space);
 }
 
-void Led8::printSymbol(int pos, int symbol)
+void Led8::printBinary(int pos, int binary)
 {
-  setSymbol(pos, symbol);
+  setBinary(pos, binary);
 }
 
-void Led8::printSymbol(int symbol)
+void Led8::printBinary(int binary)
 {
-  setSymbol(_cursor, symbol);
-  moveRight();
+  setBinary(_cursor, binary);
+  moveRight(1);
 }
 
-void Led8::putSymbol(int symbol)
+void Led8::putBinary(int binary)
 {
-  setSymbol(_cursor, symbol);
+  setBinary(_cursor, binary);
+}
+
+void Led8::print(int pos, String value)
+{
+  value.toUpperCase();
+  for (int i=0;i<value.length();i++)
+  {
+    if (pos+i >= DISPLAY_LENGTH) break;
+    char symb = value.charAt(i);
+    char code = getBinaryCode(symb);
+    setBinary(pos+i, code);
+  }
+}
+
+void Led8::print(int pos, String value, int fieldLength)
+{
+  print(pos, padLeftAndTrim(value, fieldLength));
+}
+
+void Led8::print(int pos, int value, int fieldLength)
+{
+  print(pos, String(value), fieldLength);
 }
 
 void Led8::print(int pos, int value)
 {
-  setSymbol(pos, _symbols[value]);
+  print(pos, String(value));
+}
+
+void Led8::print(String value)
+{
+  print(_cursor, value);
+  moveRight(value.length());
 }
 
 void Led8::print(int value)
 {
-  print(_cursor, value);
-  moveRight();
+  print(String(value));
 }
 
-void Led8::put(int value)
+void Led8::put(String value)
 {
   print(_cursor, value);
 }
 
 void Led8::printSpace()
 {
-  setSymbol(_cursor, _space);
-  moveRight();
+  setBinary(_cursor, _space);
+  moveRight(1 );
 }
 
 void Led8::moveTo(int pos)

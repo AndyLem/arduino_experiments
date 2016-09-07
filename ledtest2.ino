@@ -25,28 +25,35 @@ void setup()
   led.print(5);
   led.print(6);
   led.print(7);
+  led.clear();
+  led.print(0, "A");
+  led.print(4, "B");
 }
 
 void loop()
 {
-  led.tick(0);
-
-  int mils = millis();
-  if (mils - lastmils < del)
-    return;
-  lastmils = mils;
-
+  
   led.moveToStart();
-  for (int i = start; i < 8 + start; i++)
-    led.print(i);
 
-  if (dir > 0)
-    if (start < 8)
-      start++;
-    else
-      dir = -1;
-  else if (start > 0)
-    start--;
-  else
-    dir = 1;
+  led.print(1, 12, 3);
+  led.print(5, -34, 3);
+  led.tick(0);
+//  int mils = millis();
+//  if (mils - lastmils < del)
+//    return;
+//  lastmils = mils;
+//
+//  led.moveToStart();
+//  for (int i = start; i < 8 + start; i++)
+//    led.print(String(i));
+//
+//  if (dir > 0)
+//    if (start < 8)
+//      start++;
+//    else
+//      dir = -1;
+//  else if (start > 0)
+//    start--;
+//  else
+//    dir = 1;
 }
